@@ -1,0 +1,9 @@
+Changelog
+=========
+
+0.1
+---
+Initial release
+
+In theory, parses all messages except for those related to transactions to IP
+addresses. Some test coverage.
