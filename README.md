@@ -15,4 +15,3 @@ Alternative Ruby libraries that sort-of look at the same area:
 
 This library differs from the others in that it leverages bindata to do the
 heavy lifting. Results in less, easier-to-read, more robust code.
-
