@@ -1,7 +1,7 @@
 README
 ======
 
-btc_wire_proto is a library that serializes and deserializes messages in the
+bitcoin-ruby is a library that serializes and deserializes messages in the
 Bitcoin wire format. Getting the data from (and sending it to) the network,
 finding peers, validating blocks, building a block chain, etc. are all out of
 scope.

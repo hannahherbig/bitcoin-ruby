@@ -1,3 +1,5 @@
+$: << "lib" << "spec" << "."
+
 require 'spec_helper'
 require 'btc_wire_proto'
 
@@ -52,7 +54,7 @@ describe ::Bitcoin do
   describe TimestampedNetAddr do
     it "should leverage NetAddr" do
       tna = TimestampedNetAddr::read("\x00" * 30)
-      tna.net_addr.class.should == BtcWireProto::NetAddr
+      tna.net_addr.class.should == Bitcoin::NetAddr
     end
 
     it "should have all fields set to 0 when the input data is all zeroes" do
@@ -244,7 +246,7 @@ describe ::Bitcoin do
           00 00 00 00 00 00 00 00 FF FF 0A 00 00 02 20 8D DD 9D 20
           2C 3A B4 57 13 00 55 81 01 00
         }))
-        m.header.magic.should == BtcWireProto::NETWORKS[:main]
+        m.header.magic.should == Bitcoin::NETWORKS[:main]
         m.header.command.should == "version\x00\x00\x00\x00\x00"
         m.header.payload_len.should == 85
         m.header.has_parameter?(:checksum).should be_false
@@ -270,7 +272,7 @@ describe ::Bitcoin do
         m = Message::read(binary(%w{
           F9 BE B4 D9 76 65 72 61 63 6B 00 00 00 00 00 00 00 00 00 00
         }))
-        m.header.magic.should == BtcWireProto::NETWORKS[:main]
+        m.header.magic.should == Bitcoin::NETWORKS[:main]
         m.header.command.should == "verack\x00\x00\x00\x00\x00\x00"
         m.header.payload_len.should == 0
         m.header.has_parameter?(:chcksum).should be_false

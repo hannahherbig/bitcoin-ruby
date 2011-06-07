@@ -1,8 +1,8 @@
 Gem::Specification.new do |gem|
-  gem.name = "btc_wire_proto"
+  gem.name = "bitcoin"
   gem.version = "0.1"
   gem.date = Date.today.to_s
-  gem.summary = "(De)serialiser for the Bitcoin p2p wire protocol"
+  gem.summary = "(De)serializer for the Bitcoin p2p wire protocol"
   gem.description = "Implements the generation and parsing code for Bitcoin" +
                     " p2p messages"
 
