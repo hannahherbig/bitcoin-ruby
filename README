@@ -1,7 +1,7 @@
 README
 ======
 
-btc_wire_proto is a library that serialises and deserialises messages in the
+btc_wire_proto is a library that serializes and deserializes messages in the
 Bitcoin wire format. Getting the data from (and sending it to) the network,
 finding peers, validating blocks, building a block chain, etc. are all out of
 scope.
@@ -14,5 +14,5 @@ https://github.com/altamic/bitcoin-protocol
 https://github.com/lian/bitcoin-ruby
 
 This library differs from the others in that it leverages bindata to do the
-heavy lifting. Results in less, easier-to-read, more robust code. 
+heavy lifting. Results in less, easier-to-read, more robust code.
 

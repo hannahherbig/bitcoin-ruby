@@ -3,16 +3,16 @@ require 'btc_wire_proto'
 
 # Fixtures data. Taken from: https://en.bitcoin.it/wiki/Protocol_specification
 
-include ::BtcWireProto
+include ::Bitcoin
 
-describe ::BtcWireProto do
+describe ::Bitcoin do
 
   # Payload fragments
   describe ServicesMask do
     it "should have node_network set to false when its bit is 0" do
       s = ServicesMask::read("\x00" * 8) # All 64 bits unset
       s.node_network.should == 0
-      
+
       s = ServicesMask::read(binary(%w{01 00 00 00 00 00 00 00}))
       s.node_network.should == 1
     end
@@ -21,26 +21,26 @@ describe ::BtcWireProto do
   describe NetAddr do
     it "should have all fields set to 0 when the input data is all zeroes" do
       na = NetAddr::read("\x00" * 26)
-    
+
       na.services.node_network.should == 0
       na.ip.to_u128.should == 0
       na.port.should == 0
     end
-    
+
     it "Should allow the Ip field to be set with Ruby native types" do
       na = NetAddr::read("\x00" * 26)
       mip = IPAddress("::ffff:0.0.0.1")
       na.ip = mip
       na.ip.to_u128.should == mip.to_u128
     end
-    
-    it "should have the fields set appropriately when fed binary data" do  
+
+    it "should have the fields set appropriately when fed binary data" do
       na = NetAddr::read(
         binary(%w{
           01 00 00 00 00 00 00 00 00 00 00 00 00
           00 00 00 00 00 FF FF 0A 00 00 01 20 8D
         })
-      ) 
+      )
 
       na.services.node_network.should == 1
       na.ip.to_s.should == "::ffff:10.0.0.1"
@@ -59,15 +59,15 @@ describe ::BtcWireProto do
       tna = TimestampedNetAddr::read("\x00" * 30)
       tna.timestamp.should == 0
     end
-     
-    it "should have the fields set appropriately when fed binary data" do  
+
+    it "should have the fields set appropriately when fed binary data" do
       tna = TimestampedNetAddr::read(
         binary(%w{
           E2 15 10 4D 01 00 00 00 00 00 00 00 00 00 00
           00 00 00 00 00 00 00 FF FF 0A 00 00 01 20 8D
          })
-      ) 
-      
+      )
+
       tna.timestamp.should == 1292899810
 
       tna.net_addr.services.node_network.should == 1
@@ -84,7 +84,7 @@ describe ::BtcWireProto do
       a.should == -1
       a.num_bytes.should == 9
       a.to_binary_s.should == bin_minus_1
-            
+
       a = VarInt::read("\xff" * 9)
       a.should == -(2**64 - 1)
       a.num_bytes.should == 9
@@ -102,13 +102,13 @@ describe ::BtcWireProto do
       a.num_bytes.should == 1
       a.to_binary_s.should == "\xFC"
     end
-    
+
     it "should hold numbers >= 0x000000fd and < 0x00010000 in three bytes" do
       a = VarInt::read("\xFD\xFD\x00")
       a.should == 0xFD
       a.num_bytes.should == 3
       a.to_binary_s.should == "\xFD\xFD\x00"
-      
+
       a = VarInt::read("\xFD\xFF\xFF")
       a.should == 0xFFFF
       a.num_bytes.should == 3
@@ -120,7 +120,7 @@ describe ::BtcWireProto do
       a.should == 0x10000
       a.num_bytes.should == 5
       a.to_binary_s.should == "\xFE\x00\x00\x01\x00"
-      
+
       a = VarInt::read("\xFE\xFF\xFF\xFF\xFF")
       a.should == 0xFFFFFFFF
       a.num_bytes.should == 5
@@ -135,7 +135,7 @@ describe ::BtcWireProto do
       a.should == "abcd"
       a.num_bytes.should == 5
       a.to_binary_s.should == "\x04abcd"
-      
+
       a = VarStr::read("\xFD\xFF\xFF" + "A" * 0xFFFF)
       a.should == "A" * 0xFFFF
       a.num_bytes.should == 0xFFFF + 3
@@ -157,9 +157,9 @@ describe ::BtcWireProto do
 
   describe BlockHdr do
   end
-  
+
   # Payloads
-  
+
   describe Version do
     it "should interpret binary data correctly" do
       ver = Version::read(binary(%w{
@@ -179,7 +179,7 @@ describe ::BtcWireProto do
       ver.sub_version.should == ""
       ver.start_height.should == 98645
     end
-    
+
     it "should exclude some fields by version" do
       v = Version::read([1].pack("V") + "\x00" * 42)
       v.num_bytes.should == 46
@@ -189,52 +189,52 @@ describe ::BtcWireProto do
       v.num_bytes.should == 85
     end
   end
-  
+
   describe AddrPre31402 do
   end
-  
+
   describe AddrFrom31402 do
   end
-  
+
   describe Inventory do
   end
-  
+
   describe BlockSpec do
   end
-  
+
   describe Transaction do
   end
-  
+
   describe Block do
   end
-  
+
   describe Headers do
   end
-  
+
   describe CheckOrder do
   end
-  
+
   describe SubmitOrder do
   end
-  
+
   describe Reply do
   end
-  
+
   describe Alert do
   end
-  
+
 
   # Messages
   describe MessageHdr do
   end
-  
+
   describe Message do
     context "Version message" do
       it "should have a Version payload" do
         m = Message::new(:header => {:command => 'version'})
         m.payload.selection.should == "version"
       end
-      
+
       it "should parse binary data correctly" do
         m = Message::read(binary(%w{
           F9 BE B4 D9 76 65 72 73 69 6F 6E 00 00 00 00 00 55 00 00
@@ -256,10 +256,10 @@ describe ::BtcWireProto do
         m.payload.nonce.should == 0x1357B43A2C209DDD
         m.payload.sub_version.should == ""
         m.payload.start_height.should == 98645
-        
+
       end
     end
-    
+
     context "Verack message" do
       it "should have no payload" do
         m = Message.new(:header => {:command => "verack"})
@@ -278,5 +278,5 @@ describe ::BtcWireProto do
 
     end
   end
-  
+
 end
