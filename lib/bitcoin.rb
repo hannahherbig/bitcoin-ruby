@@ -1,5 +1,10 @@
 require 'bindata'
 require 'ipaddress'
+require 'openssl'
+
+def double_sha256(string)
+    OpenSSL::Digest::SHA256.digest(OpenSSL::Digest::SHA256.digest(string))
+end
 
 # Wraps the IPAddress::IPv6 class found in the ipaddress gem to provide easier
 # handling of binary-format IP addresses
@@ -23,6 +28,7 @@ class Ipv6Address < BinData::Primitive
     end
 
     def set(v)
+        v = IPAddress(v) if v.is_a?(String)
         v = IPAddress::IPv6::Mapped.new(v.to_s) if v.is_a?(IPAddress::IPv4)
         v = IPAddress(v.to_s) unless v.is_a?(IPAddress::IPv6)
 
@@ -45,6 +51,10 @@ module Bitcoin
 class << self
     def CURRENT_VERSION(network = :main)
         VERSIONS[network]
+    end
+
+    def read(io)
+        Message.read(io)
     end
 end
 
@@ -285,7 +295,7 @@ end
 class Inventory < BinData::Record
     endian  :little
 
-    var_int :iv_count
+    var_int :iv_count, :value => lambda { items.length }
     array :items, :type => :inventory_vector,
                             :read_until => lambda { index == iv_count - 1 }
 end
@@ -388,24 +398,13 @@ end
 # @author Nick Thomas <nick@lupine.me.uk>
 class MessageHdr < BinData::Record
     endian :little
-    uint32 :magic
-    string :command, :length => 12
-    uint32 :payload_len
-    uint32 :checksum, :onlyif => :has_checksum?
-
-    protected
-
-    # version and verack messages don't have a checksum. The rest do.
-    # @return[Boolean] does this message header have a checksum field or not?
-    def has_checksum?
-        !%w|version verack|.include?(command.strip)
-    end
 end
 
 
 # Everything on the wire is a Message.
 # @author Nick Thomas <nick@lupine.me.uk>
 class Message < BinData::Record
+    endian :little
 
     # @param[Fixnum,nil] version The protocol version. Setting this affects
     # the layout of various fields.
@@ -414,7 +413,16 @@ class Message < BinData::Record
         @version = v || ::Bitcoin::CURRENT_VERSION(:main)
     end
 
-    message_hdr :header
+    hide :magic
+
+    uint32 :magic, :value => :magic_finder
+    string :command, :length => 12, :trim_padding => true
+    uint32 :payload_len, :value => lambda { payload.num_bytes }
+    uint32 :checksum, :onlyif => :has_checksum?,
+                      :check_value =>
+lambda { value == BinData::Uint32le.read(double_sha256(payload.to_binary_s)[0...4]).snapshot },
+                      :value =>
+lambda { BinData::Uint32le.read(double_sha256(payload.to_binary_s)[0...4]).snapshot }
 
     choice :payload, :selection => :payload_choice do
         version         "version"
@@ -433,10 +441,16 @@ class Message < BinData::Record
         null_payload    "null"
     end
 
+    protected
+
+    def magic_finder
+        ::Bitcoin::NETWORKS[::Bitcoin::VERSIONS[@version]]
+    end
+
     # Works out what the payload looks like based on the MessageHdr struct
     # and (potentially) the version
     def payload_choice
-        cmd = header.command.to_s.strip
+        cmd = command.to_s.strip
         return cmd if %w{version inv getdata getblocks getheaders tx block
             headers alert}.include?(cmd)
 
@@ -453,6 +467,12 @@ class Message < BinData::Record
             cmd == "addr"
 
         raise NotImplementedError, "Unknown command: #{cmd}"
+    end
+
+    # version and verack messages don't have a checksum. The rest do.
+    # @return[Boolean] does this message header have a checksum field or not?
+    def has_checksum?
+        !%w|version verack|.include?(command.strip)
     end
 
 end
